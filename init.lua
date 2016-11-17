@@ -1,4 +1,5 @@
-local inspect = require('./inspect')
+local primaryApplications = {'com.google.Chrome', 'com.googlecode.iterm2'}
+
 function addCustomModifier(modifierCode, modifier, standaloneCode)
    local modifierPressed = false
    local modifierUsed = false
@@ -94,7 +95,6 @@ function addStandaloneModifier(modifierCode, modifier, standaloneCode)
 end
 
 function createAlternativeKeys(hotkeyDefinitions)
-
    function printKey(code)
       return function () hs.eventtap.event.newKeyEvent({}, code, true):post() end
    end
@@ -105,10 +105,22 @@ function createAlternativeKeys(hotkeyDefinitions)
    hs.hotkey.bind({'alt'}, 'l', printKey('right'))
 end
 
+local lastPrimaryApplication = 1 
+function togglePrimaryApplications ()
+   local win = hs.window.focusedWindow()
+   local focusedBundleID = win:application():bundleID()
+   for index, value in ipairs (primaryApplications) do
+      if value == focusedBundleID and focusedBundleID == primaryApplications[index] then
+         lastPrimaryApplication = math.fmod(lastPrimaryApplication, 2) + 1
+      end
+   end
+   hs.application.launchOrFocusByBundleID(primaryApplications[lastPrimaryApplication])
+end
+
 addCustomModifier(49, "shift", "space")
 addStandaloneModifier(54, "cmd", "escape")
 addStandaloneModifier(55, "cmd", "delete")
--- addStandaloneHandler(58, "alt", function () hs.notify.show('test','test','test') end)
+addStandaloneHandler(58, "alt", togglePrimaryApplications)
 createAlternativeKeys()
 
 -- Reload config when any lua file in config directory changes
