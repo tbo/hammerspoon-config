@@ -13,15 +13,40 @@ function addCustomModifier(modifierCode, modifier, standaloneCode)
       keyUpEvents:start()
    end
 
+   local printUmlaut = function (umlaut)
+      keyDownEvents:stop()
+      keyUpEvents:stop()
+      hs.eventtap.keyStrokes(umlaut)
+      keyDownEvents:start()
+      keyUpEvents:start()
+   end
+
    keyDownEvents = hs.eventtap.new({hs.eventtap.event.types.keyDown}, function(event)
          local flags = event:getFlags()
          local keyCode = event:getKeyCode()
+         local uppercaseUmlauts = {[0] = "Ä", [31] = 'Ö', [32] = 'Ü'}
+         local lowercaseUmlauts = {[0] = "ä", [1] = 'ß', [31] = 'ö', [32] = 'ü'}
+
          if keyCode == modifierCode then
             modifierPressed = true
             return true
          end
+
          if modifierPressed then
             modifierUsed = true
+         end
+
+         if (flags.shift or modifierPressed) and flags.alt and uppercaseUmlauts[keyCode] then
+            printUmlaut(uppercaseUmlauts[keyCode])
+            return true
+         end
+
+         if flags.alt and lowercaseUmlauts[keyCode] then
+            printUmlaut(lowercaseUmlauts[keyCode])
+            return true
+         end
+
+         if modifierPressed then
             pressKey({modifier}, hs.keycodes.map[keyCode])
             return true
          end
@@ -69,46 +94,15 @@ function addStandaloneModifier(modifierCode, modifier, standaloneCode)
 end
 
 function createAlternativeKeys(hotkeyDefinitions)
-   local keyDownEvents
 
    function printKey(code)
       return function () hs.eventtap.event.newKeyEvent({}, code, true):post() end
    end
 
-   function printUmlaut(umlaut)
-      return function ()
-         keyDownEvents:stop()
-         hs.eventtap.keyStrokes(umlaut)
-         keyDownEvents:start()
-      end
-   end
-   keyDownEvents = hs.eventtap.new({hs.eventtap.event.types.keyDown}, function(event)
-         local flags = event:getFlags()
-         local keyCode = event:getKeyCode()
-
-         if flags.alt then
-            if keyCode == 31 then
-               printUmlaut('ö')
-               -- hs.notify.show('Hammerspoon', tostring(keyCode), inspect(flags))
-               return true
-            end
-         end
-   end):start()
-
-   -- keyUpEvents = hs.eventtap.new({hs.eventtap.event.types.keyUp}, function(event)
-   -- end):start()
-
    hs.hotkey.bind({'alt'}, 'j', printKey('down'))
    hs.hotkey.bind({'alt'}, 'k', printKey('up'))
    hs.hotkey.bind({'alt'}, 'h', printKey('left'))
    hs.hotkey.bind({'alt'}, 'l', printKey('right'))
-   -- hs.hotkey.bind({'alt'}, 'o', printUmlaut('ö'))
-   -- hs.hotkey.bind({'alt', 'shift'}, 'o', printUmlaut('Ö'))
-   -- hs.hotkey.bind({'alt'}, 'a', printUmlaut('ä'))
-   -- hs.hotkey.bind({'alt', 'shift'}, 'a', printUmlaut('Ä'))
-   -- hs.hotkey.bind({'alt'}, 'u', printUmlaut('ü'))
-   -- hs.hotkey.bind({'alt', 'shift'}, 'u', printUmlaut('Ü'))
-   -- hs.hotkey.bind({'alt'}, 's', printUmlaut('ß'))
 end
 
 addCustomModifier(49, "shift", "space")
