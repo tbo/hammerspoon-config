@@ -1,3 +1,4 @@
+local debug = false
 local primaryApplications = {'com.google.Chrome', 'com.googlecode.iterm2'}
 
 function addCustomModifier(modifierCode, modifier, standaloneCode)
@@ -6,7 +7,7 @@ function addCustomModifier(modifierCode, modifier, standaloneCode)
    local keyDownEvents
    local keyUpEvents
 
-   function pressKey(mods, key)
+   local pressKey = function(mods, key)
       keyDownEvents:stop()
       keyUpEvents:stop()
       hs.eventtap.event.newKeyEvent(mods, key, true):post()
@@ -71,6 +72,9 @@ function addStandaloneHandler(modifierCode, modifier, standaloneHandler)
    local modifierUsed = false
 
    local flagsChangedEvents = hs.eventtap.new({hs.eventtap.event.types.flagsChanged}, function(event)
+         if debug then
+            hs.notify.show('Hammerspoon', 'flag changed', '')
+         end
          local flags = event:getFlags()
          local keyCode = event:getKeyCode()
          if keyCode == modifierCode then
@@ -82,6 +86,9 @@ function addStandaloneHandler(modifierCode, modifier, standaloneHandler)
    end):start()
 
    keyDownEvents = hs.eventtap.new({hs.eventtap.event.types.keyDown}, function(event)
+         if debug then
+            hs.notify.show('Hammerspoon', 'keydown fired', '')
+         end
          modifierUsed = modifierUsed or event:getFlags()[modifier]
    end):start()
 end
@@ -108,15 +115,25 @@ end
 local lastPrimaryApplication = 1 
 function togglePrimaryApplications ()
    local win = hs.window.focusedWindow()
-   local focusedBundleID = win:application():bundleID()
-   for index, value in ipairs (primaryApplications) do
-      if value == focusedBundleID and focusedBundleID == primaryApplications[index] then
-         lastPrimaryApplication = math.fmod(lastPrimaryApplication, 2) + 1
+   if win then
+      local app = win:application()
+      if app then
+        local focusedBundleID = app:bundleID()
+        for index, value in ipairs (primaryApplications) do
+            -- if value == focusedBundleID then
+            if value == focusedBundleID and focusedBundleID == primaryApplications[index] then
+                lastPrimaryApplication = math.fmod(lastPrimaryApplication, 2) + 1
+            end
+        end
       end
    end
    hs.application.launchOrFocusByBundleID(primaryApplications[lastPrimaryApplication])
 end
 
+hs.hotkey.bind({'alt'}, 'd', function ()
+      debug = not debug
+      hs.notify.show('Hammerspoon', 'debug toggled', '')
+end)
 addCustomModifier(49, "shift", "space")
 addStandaloneModifier(54, "cmd", "escape")
 addStandaloneModifier(55, "cmd", "delete")
