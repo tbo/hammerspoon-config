@@ -1,29 +1,55 @@
+local fun = require('fun')
+local map = fun.map
+local iter = fun.iter
+local each = fun.each
+local range = fun.range
 local debug = false
 local primaryApplications = {'com.google.Chrome', 'com.googlecode.iterm2'}
+local keyDownEventObserver
+local keyUpEventObserver
+local flagsChangedEventObserver
+
+local keyDownListeners = {}
+local keyUpListeners = {}
+local flagsChangedListeners = {}
+
+function createObserver (eventTypes, listeners)
+   return hs.eventtap.new(eventTypes, function(event)
+        local preventDefault = false
+        each(function (handler) if handler(event) then preventDefault = true end end, listeners)
+        return preventDefault
+   end)
+end
+
+function startObservers()
+   keyDownEventObserver:start()
+   keyUpEventObserver:start()
+   flagsChangedEventObserver:start()
+end
+
+function stopObservers()
+   keyDownEventObserver:stop()
+   keyUpEventObserver:stop()
+   flagsChangedEventObserver:stop()
+end
 
 function addCustomModifier(modifierCode, modifier, standaloneCode)
    local modifierPressed = false
    local modifierUsed = false
-   local keyDownEvents
-   local keyUpEvents
 
    local pressKey = function(mods, key)
-      keyDownEvents:stop()
-      keyUpEvents:stop()
+      stopObservers()
       hs.eventtap.event.newKeyEvent(mods, key, true):post()
-      keyDownEvents:start()
-      keyUpEvents:start()
+      startObservers()
    end
 
    local printUmlaut = function (umlaut)
-      keyDownEvents:stop()
-      keyUpEvents:stop()
+      stopObservers()
       hs.eventtap.keyStrokes(umlaut)
-      keyDownEvents:start()
-      keyUpEvents:start()
+      startObservers()
    end
 
-   keyDownEvents = hs.eventtap.new({hs.eventtap.event.types.keyDown}, function(event)
+   table.insert(keyDownListeners, function(event)
          local flags = event:getFlags()
          local keyCode = event:getKeyCode()
          local uppercaseUmlauts = {[0] = "Ä", [31] = 'Ö', [32] = 'Ü'}
@@ -54,7 +80,7 @@ function addCustomModifier(modifierCode, modifier, standaloneCode)
          end
    end)
 
-   keyUpEvents = hs.eventtap.new({hs.eventtap.event.types.keyUp}, function(event)
+   table.insert(keyUpListeners, function(event)
          if event:getKeyCode() == modifierCode then
             if not modifierUsed then
                pressKey({}, standaloneCode)
@@ -64,17 +90,12 @@ function addCustomModifier(modifierCode, modifier, standaloneCode)
             return true
          end
    end)
-   keyDownEvents:start()
-   keyUpEvents:start()
 end
 
 function addStandaloneHandler(modifierCode, modifier, standaloneHandler)
    local modifierUsed = false
 
-   local flagsChangedEvents = hs.eventtap.new({hs.eventtap.event.types.flagsChanged}, function(event)
-         if debug then
-            hs.notify.show('Hammerspoon', 'flag changed', '')
-         end
+   table.insert(flagsChangedListeners, function(event)
          local flags = event:getFlags()
          local keyCode = event:getKeyCode()
          if keyCode == modifierCode then
@@ -83,14 +104,11 @@ function addStandaloneHandler(modifierCode, modifier, standaloneHandler)
             end
             modifierUsed = false
          end
-   end):start()
+   end)
 
-   keyDownEvents = hs.eventtap.new({hs.eventtap.event.types.keyDown}, function(event)
-         if debug then
-            hs.notify.show('Hammerspoon', 'keydown fired', '')
-         end
+   table.insert(keyDownListeners, function(event)
          modifierUsed = modifierUsed or event:getFlags()[modifier]
-   end):start()
+   end)
 end
 
 function addStandaloneModifier(modifierCode, modifier, standaloneCode)
@@ -130,6 +148,10 @@ function togglePrimaryApplications ()
    hs.application.launchOrFocusByBundleID(primaryApplications[lastPrimaryApplication])
 end
 
+keyDownEventObserver = createObserver({hs.eventtap.event.types.keyDown}, keyDownListeners)
+keyUpEventObserver = createObserver({hs.eventtap.event.types.keyUp}, keyUpListeners)
+flagsChangedEventObserver = createObserver({hs.eventtap.event.types.flagsChanged}, flagsChangedListeners)
+
 hs.hotkey.bind({'alt'}, 'd', function ()
       debug = not debug
       hs.notify.show('Hammerspoon', 'debug toggled', '')
@@ -139,6 +161,7 @@ addStandaloneModifier(54, "cmd", "escape")
 addStandaloneModifier(55, "cmd", "delete")
 addStandaloneHandler(58, "alt", togglePrimaryApplications)
 createAlternativeKeys()
+startObservers()
 
 -- Reload config when any lua file in config directory changes
 function reloadConfig(files)
