@@ -130,7 +130,7 @@ function createAlternativeKeys(hotkeyDefinitions)
    hs.hotkey.bind({'alt'}, 'l', printKey('right'))
 end
 
-local lastPrimaryApplication = 1 
+local currentPrimaryApplication = 1
 function togglePrimaryApplications ()
    local win = hs.window.focusedWindow()
    if win then
@@ -138,14 +138,13 @@ function togglePrimaryApplications ()
       if app then
         local focusedBundleID = app:bundleID()
         for index, value in ipairs (primaryApplications) do
-            -- if value == focusedBundleID then
-            if value == focusedBundleID and focusedBundleID == primaryApplications[index] then
-                lastPrimaryApplication = math.fmod(lastPrimaryApplication, 2) + 1
+            if value == focusedBundleID and index == currentPrimaryApplication then
+                currentPrimaryApplication = math.fmod(index, 2) + 1
             end
         end
       end
    end
-   hs.application.launchOrFocusByBundleID(primaryApplications[lastPrimaryApplication])
+   hs.application.launchOrFocusByBundleID(primaryApplications[currentPrimaryApplication])
 end
 
 keyDownEventObserver = createObserver({hs.eventtap.event.types.keyDown}, keyDownListeners)
