@@ -4,7 +4,7 @@ local iter = fun.iter
 local each = fun.each
 local range = fun.range
 local debug = false
-local primaryApplications = {'com.google.Chrome', 'com.googlecode.iterm2'}
+local primaryApplications = {'com.google.Chrome', 'org.ubox.alacritty'}
 local keyDownEventObserver
 local keyUpEventObserver
 local flagsChangedEventObserver
@@ -33,64 +33,64 @@ function stopObservers()
    flagsChangedEventObserver:stop()
 end
 
-function addCustomModifier(modifierCode, modifier, standaloneCode)
-   local modifierPressed = false
-   local modifierUsed = false
-
-   local pressKey = function(mods, key)
-      stopObservers()
-      hs.eventtap.event.newKeyEvent(mods, key, true):post()
-      startObservers()
-   end
-
-   local printUmlaut = function (umlaut)
-      stopObservers()
-      hs.eventtap.keyStrokes(umlaut)
-      startObservers()
-   end
-
-   table.insert(keyDownListeners, function(event)
-         local flags = event:getFlags()
-         local keyCode = event:getKeyCode()
-         local uppercaseUmlauts = {[0] = "Ä", [31] = 'Ö', [32] = 'Ü'}
-         local lowercaseUmlauts = {[0] = "ä", [1] = 'ß', [31] = 'ö', [32] = 'ü'}
-
-         if keyCode == modifierCode then
-            modifierPressed = true
-            return true
-         end
-
-         if modifierPressed then
-            modifierUsed = true
-         end
-
-         if (flags.shift or modifierPressed) and flags.alt and uppercaseUmlauts[keyCode] then
-            printUmlaut(uppercaseUmlauts[keyCode])
-            return true
-         end
-
-         if flags.alt and lowercaseUmlauts[keyCode] then
-            printUmlaut(lowercaseUmlauts[keyCode])
-            return true
-         end
-
-         if modifierPressed then
-            pressKey({modifier}, hs.keycodes.map[keyCode])
-            return true
-         end
-   end)
-
-   table.insert(keyUpListeners, function(event)
-         if event:getKeyCode() == modifierCode then
-            if not modifierUsed then
-               pressKey({}, standaloneCode)
-            end
-            modifierPressed = false
-            modifierUsed = false
-            return true
-         end
-   end)
-end
+-- function addCustomModifier(modifierCode, modifier, standaloneCode)
+--    local modifierPressed = false
+--    local modifierUsed = false
+--
+--    local pressKey = function(mods, key)
+--       stopObservers()
+--       hs.eventtap.event.newKeyEvent(mods, key, true):post()
+--       startObservers()
+--    end
+--
+--    local printUmlaut = function (umlaut)
+--       stopObservers()
+--       hs.eventtap.keyStrokes(umlaut)
+--       startObservers()
+--    end
+--
+--    table.insert(keyDownListeners, function(event)
+--          local flags = event:getFlags()
+--          local keyCode = event:getKeyCode()
+--          local uppercaseUmlauts = {[0] = "Ä", [31] = 'Ö', [32] = 'Ü'}
+--          local lowercaseUmlauts = {[0] = "ä", [1] = 'ß', [31] = 'ö', [32] = 'ü'}
+--
+--          if keyCode == modifierCode then
+--             modifierPressed = true
+--             return true
+--          end
+--
+--          if modifierPressed then
+--             modifierUsed = true
+--          end
+--
+--          if (flags.shift or modifierPressed) and flags.alt and uppercaseUmlauts[keyCode] then
+--             printUmlaut(uppercaseUmlauts[keyCode])
+--             return true
+--          end
+--
+--          if flags.alt and lowercaseUmlauts[keyCode] then
+--             printUmlaut(lowercaseUmlauts[keyCode])
+--             return true
+--          end
+--
+--          if modifierPressed then
+--             pressKey({modifier}, hs.keycodes.map[keyCode])
+--             return true
+--          end
+--    end)
+--
+--    table.insert(keyUpListeners, function(event)
+--          if event:getKeyCode() == modifierCode then
+--             if not modifierUsed then
+--                pressKey({}, standaloneCode)
+--             end
+--             modifierPressed = false
+--             modifierUsed = false
+--             return true
+--          end
+--    end)
+-- end
 
 function addStandaloneHandler(modifierCode, modifier, standaloneHandler)
    local modifierUsed = false
@@ -155,12 +155,29 @@ hs.hotkey.bind({'alt'}, 'd', function ()
       debug = not debug
       hs.notify.show('Hammerspoon', 'debug toggled', '')
 end)
-addCustomModifier(49, "shift", "space")
-addStandaloneModifier(54, "cmd", "escape")
+-- addCustomModifier(49, "shift", "space")
+-- addStandaloneModifier(54, "cmd", "escape")
 -- addStandaloneModifier(55, "cmd", "delete")
 addStandaloneHandler(55, "cmd", togglePrimaryApplications)
 createAlternativeKeys()
 startObservers()
+
+local printUmlaut = function (umlaut)
+    return function ()
+        -- stopObservers()
+        hs.eventtap.keyStrokes(umlaut)
+        -- startObservers()
+    end
+end
+hs.hotkey.bind({'ctrl'}, 'a', printUmlaut('ä'))
+hs.hotkey.bind({'ctrl', 'shift'}, 'a', printUmlaut('Ä'))
+hs.hotkey.bind({'ctrl'}, 'o', printUmlaut('ö'))
+hs.hotkey.bind({'ctrl', 'shift'}, 'o', printUmlaut('Ö'))
+hs.hotkey.bind({'ctrl'}, 'u', printUmlaut('ü'))
+hs.hotkey.bind({'ctrl', 'shift'}, 'u', printUmlaut('Ü'))
+hs.hotkey.bind({'ctrl'}, 's', printUmlaut('ß'))
+-- local uppercaseUmlauts = {[0] = "Ä", [31] = 'Ö', [32] = 'Ü'}
+-- local lowercaseUmlauts = {[0] = "ä", [1] = 'ß', [31] = 'ö', [32] = 'ü'}
 
 -- Reload config when any lua file in config directory changes
 function reloadConfig(files)
