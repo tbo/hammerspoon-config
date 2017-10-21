@@ -130,6 +130,10 @@ function createAlternativeKeys(hotkeyDefinitions)
    hs.hotkey.bind({'alt'}, 'l', printKey('right'))
 end
 
+function openApp(bundleID)
+    return function () hs.application.launchOrFocusByBundleID(bundleID) end
+end
+
 local currentPrimaryApplication = 1
 function togglePrimaryApplications ()
    local win = hs.window.focusedWindow()
@@ -158,7 +162,7 @@ end)
 -- addCustomModifier(49, "shift", "space")
 -- addStandaloneModifier(54, "cmd", "escape")
 -- addStandaloneModifier(55, "cmd", "delete")
-addStandaloneHandler(55, "cmd", togglePrimaryApplications)
+-- addStandaloneHandler(55, "cmd", togglePrimaryApplications)
 createAlternativeKeys()
 startObservers()
 
@@ -176,6 +180,8 @@ hs.hotkey.bind({'ctrl', 'shift'}, 'o', printUmlaut('Ö'))
 hs.hotkey.bind({'ctrl'}, 'u', printUmlaut('ü'))
 hs.hotkey.bind({'ctrl', 'shift'}, 'u', printUmlaut('Ü'))
 hs.hotkey.bind({'ctrl'}, 's', printUmlaut('ß'))
+hs.hotkey.bind({'cmd'}, '3', openApp(primaryApplications[1]))
+hs.hotkey.bind({'cmd'}, '4', openApp(primaryApplications[2]))
 -- local uppercaseUmlauts = {[0] = "Ä", [31] = 'Ö', [32] = 'Ü'}
 -- local lowercaseUmlauts = {[0] = "ä", [1] = 'ß', [31] = 'ö', [32] = 'ü'}
 
