@@ -4,7 +4,7 @@ local iter = fun.iter
 local each = fun.each
 local range = fun.range
 local debug = false
-local primaryApplications = {'com.google.Chrome', 'org.ubox.alacritty'}
+local primaryApplications = {'com.google.Chrome', 'io.alacritty'}
 local keyDownEventObserver
 local keyUpEventObserver
 local flagsChangedEventObserver
@@ -180,6 +180,7 @@ hs.hotkey.bind({'ctrl', 'shift'}, 'o', printUmlaut('Ö'))
 hs.hotkey.bind({'ctrl'}, 'u', printUmlaut('ü'))
 hs.hotkey.bind({'ctrl', 'shift'}, 'u', printUmlaut('Ü'))
 hs.hotkey.bind({'ctrl'}, 's', printUmlaut('ß'))
+hs.hotkey.bind({'cmd'}, '2', openApp('com.microsoft.VSCode'))
 hs.hotkey.bind({'cmd'}, '3', openApp(primaryApplications[1]))
 hs.hotkey.bind({'cmd'}, '4', openApp(primaryApplications[2]))
 -- local uppercaseUmlauts = {[0] = "Ä", [31] = 'Ö', [32] = 'Ü'}
