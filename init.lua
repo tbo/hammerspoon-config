@@ -187,13 +187,13 @@ function sendSelectionEndKey()
    if win then
       local app = win:application()
       if app then
-         if app:bundleID() == 'com.brave.Browser' then
-            stopObservers()
-            hs.eventtap.event.newKeyEvent({"shift", "alt"}, 'L', true):post()
-            startObservers()
-         else 
+         -- if app:bundleID() == 'com.brave.Browser' then
+         --    stopObservers()
+         --    hs.eventtap.event.newKeyEvent({"shift", "alt"}, 'L', true):post()
+         --    startObservers()
+         -- else 
             printNonRecursiveKey('f18')
-         end
+         -- end
       end
    end
 end
